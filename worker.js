@@ -1,10 +1,10 @@
+import "dotenv/config";
 import { Worker } from "bullmq";
 import { connection } from "./queue/connection.js";
 import { generatePdf } from "./pdf/generatePdf.js";
 import path from "path";
 import fs from "fs";
 import fetch from "node-fetch";
-import "dotenv/config";
 
 
 const OUTPUT_DIR = path.resolve("./output");
