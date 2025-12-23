@@ -1,0 +1,24 @@
+{
+  "name": "pdf-worker",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "bullmq": "^5.66.2",
+    "crypto": "^1.0.1",
+    "dotenv": "^17.2.3",
+    "fs": "^0.0.1-security",
+    "ioredis": "^5.8.2",
+    "node-fetch": "^3.3.2",
+    "path": "^0.12.7",
+    "puppeteer": "^24.34.0",
+    "sanitize-html": "^2.17.0"
+  }
+}
