@@ -19,6 +19,8 @@ new Worker(
     console.log("🛠 Processing job:", job.id);
 
     const { html, jobId } = job.data;
+    const STATUS_API_URL =
+  process.env.STATUS_API_URL || "http://127.0.0.1:8060/internal/job-status";
 
     try {
       const filePath = `./output/${jobId}.pdf`;
@@ -27,7 +29,7 @@ new Worker(
       console.log("✅ PDF generated:", filePath);
 
       // 🔴 THIS MUST HAPPEN OR UI WILL STUCK
-      const res = await fetch("http://localhost:4000/internal/job-status", {
+      const res = await fetch(STATUS_API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -45,7 +47,7 @@ new Worker(
     } catch (err) {
       console.error("❌ Worker failed:", err);
 
-      await fetch("http://localhost:4000/internal/job-status", {
+      await fetch(STATUS_API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
