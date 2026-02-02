@@ -24,6 +24,7 @@ export async function generatePdf(html, outputPath) {
   await page.emulateMediaType("print");
 
   const pdf = await page.pdf({
+    path: outputPath,
     format: "A4",
     printBackground: true,
     margin: {
