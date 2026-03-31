@@ -20,7 +20,6 @@ export function sanitize(html) {
       },
     },
     // preserve <style> tag content including @page and @media rules
-    allowVulnerableTags: false,
-    parseStyleAttributes: false,
-  });
+    allowVulnerableTags: false
+  })
 }
