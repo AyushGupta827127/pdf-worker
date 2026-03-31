@@ -3,6 +3,8 @@ import { getBrowser } from "./browser.js";
 import { sanitize } from "./sanitize.js";
 import { validateImages } from "./validateImages.js";
 
+const IS_FULL_DOCUMENT = /<html[\s>]/i;
+
 export async function generatePdf(html, outputPath) {
   if (!html || typeof html !== "string") {
     throw new Error("Invalid HTML input");
@@ -14,46 +16,30 @@ export async function generatePdf(html, outputPath) {
 
   validateImages(html);
 
-  // sanitize USER HTML, do not restyle it
-  const safeHtml = sanitize(wrapHtml(html));
+  const prepared = IS_FULL_DOCUMENT.test(html) ? html : wrapHtml(html);
+  const safeHtml = sanitize(prepared);
 
   const browser = await getBrowser();
   const page = await browser.newPage();
 
-  await page.setContent(safeHtml, { waitUntil: "load" });
+  await page.setViewport({ width: 1200, height: 1600 });
+  await page.setContent(safeHtml, { waitUntil: "networkidle0", timeout: 30000 });
   await page.emulateMediaType("print");
 
   const pdf = await page.pdf({
-    path: outputPath,
     format: "A4",
     printBackground: true,
-    margin: {
-      top: "20mm",
-      right: "20mm",
-      bottom: "20mm",
-      left: "20mm",
-    },
+    preferCSSPageSize: true,
   });
 
   fs.writeFileSync(outputPath, pdf);
   await page.close();
 }
 
-/**
- * Minimal wrapper.
- * Does NOT inject any CSS.
- * User styles remain untouched.
- */
 function wrapHtml(content) {
-  return `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="utf-8" />
-      </head>
-      <body>
-        ${content}
-      </body>
-    </html>
-  `;
+  return `<!DOCTYPE html>
+<html>
+  <head><meta charset="utf-8" /></head>
+  <body>${content}</body>
+</html>`;
 }

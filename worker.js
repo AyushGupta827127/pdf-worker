@@ -13,6 +13,8 @@ if (!fs.existsSync(OUTPUT_DIR)) {
   fs.mkdirSync(OUTPUT_DIR);
 }
 
+const CONCURRENCY = parseInt(process.env.PDF_WORKER_CONCURRENCY, 10) || 1;
+
 new Worker(
   "pdf-jobs",
   async (job) => {
@@ -37,7 +39,7 @@ new Worker(
         },
         body: JSON.stringify({
           job_id: jobId,
-          status: "completed",
+          status: "done",
         }),
       });
 
@@ -64,8 +66,8 @@ new Worker(
   },
   {
     connection,
-    concurrency: 1,
+    concurrency: CONCURRENCY,
   }
 );
 
-console.log("📄 PDF Worker started (concurrency = 1)");
+console.log(`📄 PDF Worker started (concurrency = ${CONCURRENCY})`);
