@@ -129,12 +129,12 @@ Main PDF pipeline:
 5. Sets a 1200×1600 viewport, waits for `networkidle0`, then renders an A4 PDF with `printBackground: true` and `preferCSSPageSize: true` (no forced margins).
 
 ### `pdf/sanitize.js` — `sanitize(html)`
-Wraps `sanitize-html` with an expanded allowlist:
-- Tags: all defaults plus `html`, `head`, `body`, `meta`, `style`, `title`, and all table elements.
-- Attributes: `class`, `style`, `id`, and table layout attributes (`align`, `valign`, `colspan`, `rowspan`, `bgcolor`, `border`, `cellpadding`, `cellspacing`) on every element.
-- Inline CSS: all properties preserved via `allowedStyles: { "*": { "*": [/.*/] } }`.
-- `<style>` tag content (including `@page` and `@media print` rules) is kept intact.
-- Dangerous tags (`<script>`, `<iframe>`, etc.) are still stripped.
+Minimal regex-based security strip that preserves HTML/CSS byte-for-byte except for three targeted removals:
+- `<script>` and `<iframe>` tags (including their content) are removed.
+- `src` and `href` attributes pointing to `http:`, `https:`, or `file:` URLs are stripped.
+- Everything else — `<style>` blocks, inline styles, class attributes, `@page`, `@media print`, pseudo-selectors, table layout, typography, custom properties — is left completely untouched.
+
+This replaces `sanitize-html`, which rewrites the CSS/DOM and breaks complex selectors, pseudo-elements, and layout properties regardless of allowlist configuration.
 
 ### `pdf/validateImages.js` — `validateImages(html)`
 Enforces three rules before rendering:
@@ -188,15 +188,19 @@ If the incoming `html` string contains an `<html` tag it is treated as a complet
 | Asset type | Supported |
 |---|---|
 | Inline `style` attributes | ✅ |
-| `<style>` blocks (including `@page`, `@media print`) | ✅ |
+| `<style>` blocks (including `@page`, `@media print`, pseudo-selectors) | ✅ |
+| Class-based styling, custom properties, typography | ✅ |
 | Base64 images (`data:image/png;base64,...`) | ✅ |
 | Base64 fonts (`@font-face` with `data:font/...`) | ✅ |
+| Any self-contained HTML/CSS layout | ✅ |
 | External CSS (`<link rel="stylesheet" href="...">`) | ❌ blocked |
 | External fonts (Google Fonts, CDN) | ❌ blocked |
 | External images (`<img src="https://...">`) | ❌ blocked |
-| Remote URLs of any kind | ❌ blocked |
+| Remote URLs of any kind (`http`, `https`, `file`) | ❌ blocked |
+| `<script>` tags | ❌ blocked |
+| `<iframe>` tags | ❌ blocked |
 
-The worker operates fully offline. Any resource that requires a network fetch will not load. All styling must be self-contained in the HTML payload.
+The worker supports any self-contained HTML/CSS layout. All styling must be embedded in the payload — inline styles, `<style>` blocks, or base64-encoded assets. The worker operates fully offline; any resource requiring a network fetch will not load.
 
 ### CSS Preservation
 All inline `style` attributes, `class` attributes, and `<style>` blocks are preserved after sanitization. This includes:
@@ -257,8 +261,9 @@ If no `@page` rule is present, Chrome's default margins apply.
 
 ## Security Notes
 
-- External image URLs are blocked — only base64 images are accepted.
+- HTML is sanitized with a minimal regex strip — no DOM rewriting, no CSS mangling.
+- `<script>` and `<iframe>` tags are removed entirely.
+- `src`/`href` attributes referencing `http:`, `https:`, or `file:` URLs are stripped.
+- External image URLs are blocked at the `validateImages()` layer — only base64 images are accepted.
 - SVG images are explicitly rejected to prevent SVG-based injection attacks.
-- All HTML is sanitized before being passed to the browser.
 - The internal status endpoint is protected by a shared secret token.
-- External CSS and font URLs are not fetched — the worker has no outbound network access by design.

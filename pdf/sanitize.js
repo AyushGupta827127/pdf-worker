@@ -1,25 +1,14 @@
-import sanitizeHtml from "sanitize-html";
+// Minimal security strip — does not parse or rewrite HTML/CSS.
+// Removes only the three concrete threats; everything else is preserved byte-for-byte.
+
+// Matches <script ...>...</script> and <iframe ...>...</iframe> (including self-closing)
+const DANGEROUS_TAGS = /<(script|iframe)(\s[^>]*)?>.*?<\/\1>|<(script|iframe)(\s[^>]*)?\/?>/gis;
+
+// Matches href="http..." / src="https..." / src='file:...' etc. on any tag
+const EXTERNAL_ATTRS = /\s(src|href)=["'](https?:|file:)[^"']*/gi;
 
 export function sanitize(html) {
-  return sanitizeHtml(html, {
-    allowedTags: [
-      ...sanitizeHtml.defaults.allowedTags,
-      "html", "head", "body", "meta", "style", "title",
-      "table", "thead", "tbody", "tfoot", "tr", "th", "td", "colgroup", "col",
-    ],
-    allowedAttributes: {
-      "*": ["class", "style", "id", "align", "valign", "width", "height", "colspan", "rowspan", "bgcolor", "border", "cellpadding", "cellspacing"],
-      "meta": ["charset", "name", "content", "http-equiv"],
-      "img": ["src", "alt", "width", "height", "style", "class"],
-      "a": ["href", "name", "target"],
-    },
-    allowedStyles: {
-      "*": {
-        // allow all inline CSS properties
-        "*": [/.*/],
-      },
-    },
-    // preserve <style> tag content including @page and @media rules
-    allowVulnerableTags: false
-  })
+  return html
+    .replace(DANGEROUS_TAGS, "")
+    .replace(EXTERNAL_ATTRS, "");
 }
